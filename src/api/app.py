@@ -39,6 +39,13 @@ from src.resilience.exceptions import (
     RuntimeResilienceError,
     StageTimeoutError,
 )
+from src.api.skin_chat_schemas import SkinChatRequest, SkinChatResponse
+from src.api.skin_chat_helpers import (
+    build_context_message,
+    extract_recommendations,
+    estimate_confidence,
+    SKIN_CHAT_DISCLAIMER,
+)
 
 # Input Control Config
 MAX_MESSAGE_CHARS = int(os.getenv("MAX_MESSAGE_CHARS", 500))
@@ -957,7 +964,51 @@ async def chat_endpoint(request: ChatRequest):
         raise HTTPException(status_code=500, detail="Internal server error processing the request.")
     finally:
         active_requests.discard(session_id)
+@app.post("/v1/skin-chat", response_model=SkinChatResponse, response_model_exclude_none=True)
+async def skin_chat_endpoint(request: SkinChatRequest):
+    """
+    Adapter cho glow_aura Group B integration (RagChatClient.cs).
 
+    Nhận acne_data + user_profile, gộp thành 1 message giàu ngữ cảnh, rồi
+    GỌI LẠI chat_endpoint() hiện có (không viết lại pipeline) để tái sử
+    dụng nguyên vẹn retrieval, guardrail an toàn, cache và lưu lịch sử
+    PostgreSQL. Cuối cùng chỉ map ChatResponse sang đúng shape mà client
+    .NET đang chờ: recommendations / red_flags / confidence / disclaimer.
+    """
+
+    context_message = build_context_message(
+        request.acne_data,
+        request.user_profile,
+        request.message,
+    )
+
+    inner_request = ChatRequest(
+        message=context_message,
+        session_id=request.session_id,
+        allow_model_fallback=True,
+        bypass_cache=False,
+    )
+
+    chat_response = await chat_endpoint(inner_request)
+
+    red_flags = list(chat_response.safety_flags)
+    recommendations = extract_recommendations(chat_response.answer)
+    confidence = estimate_confidence(
+        is_in_domain=chat_response.metadata.is_in_domain,
+        guardrail_applied=chat_response.metadata.guardrail_applied,
+        fallback_used=chat_response.metadata.fallback_used,
+        red_flags=red_flags,
+    )
+
+    return SkinChatResponse(
+        session_id=chat_response.session_id or request.session_id or "",
+        answer=chat_response.answer,
+        recommendations=recommendations,
+        red_flags=red_flags,
+        safety_flags=chat_response.safety_flags,
+        confidence=confidence,
+        disclaimer=SKIN_CHAT_DISCLAIMER,
+    )
 
 async def _persist_chat_to_db(
     session_id: str,
