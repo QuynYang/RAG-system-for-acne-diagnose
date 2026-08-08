@@ -1,0 +1,38 @@
+.git
+.github
+.venv
+venv
+__pycache__
+*.pyc
+.pytest_cache
+.mypy_cache
+
+# Runtime data volumes — không đóng gói vào image
+data/postgres/
+data/neo4j/
+data/qdrant/
+data/redis_data/
+data/cache/
+data/raw/
+data/processed/
+data/embeddings/
+data/ingestion_manifest.json
+
+# Giữ taxonomy YAML — runtime agent cần file này
+!data/taxonomy/
+!data/taxonomy/*.yaml
+
+# sample_data (PDF lớn) không có trên GitHub — ingest chạy từ máy local
+sample_data/
+
+reports/
+notebooks/
+tests/
+docs/
+.env
+.env.*
+!.env.example
+
+src/frontend/node_modules/
+src/frontend/dist/
+*.log

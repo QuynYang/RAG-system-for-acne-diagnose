@@ -22,9 +22,33 @@ except ImportError:
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.pool import NullPool
 
-DATABASE_URL: str = os.environ.get(
-    "DATABASE_URL",
-    "postgresql+asyncpg://user:password@localhost:5433/acne_agent_db",
+
+def normalize_async_database_url(url: str) -> str:
+    """Convert Railway/Heroku-style postgres URLs for SQLAlchemy asyncpg."""
+
+    if url.startswith("postgres://"):
+        return "postgresql+asyncpg://" + url[len("postgres://") :]
+    if url.startswith("postgresql://"):
+        return "postgresql+asyncpg://" + url[len("postgresql://") :]
+    return url
+
+
+def normalize_sync_database_url(url: str) -> str:
+    """Derive psycopg2 sync URL from async or platform postgres URLs."""
+
+    normalized = normalize_async_database_url(url)
+    if normalized.startswith("postgresql+asyncpg://"):
+        return "postgresql+psycopg2://" + normalized[len("postgresql+asyncpg://") :]
+    if normalized.startswith("postgresql://"):
+        return normalized.replace("postgresql://", "postgresql+psycopg2://", 1)
+    return normalized
+
+
+DATABASE_URL: str = normalize_async_database_url(
+    os.environ.get(
+        "DATABASE_URL",
+        "postgresql+asyncpg://user:password@localhost:5433/acne_agent_db",
+    )
 )
 
 # ---------------------------------------------------------------------------

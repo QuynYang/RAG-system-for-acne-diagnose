@@ -36,9 +36,13 @@ logging.basicConfig(
 )
 logger = logging.getLogger("init_chat_schema")
 
-DATABASE_URL = os.getenv(
-    "DATABASE_URL",
-    "postgresql+asyncpg://user:password@localhost:5433/acne_agent_db",
+from src.database.connection import normalize_async_database_url
+
+DATABASE_URL = normalize_async_database_url(
+    os.getenv(
+        "DATABASE_URL",
+        "postgresql+asyncpg://user:password@localhost:5433/acne_agent_db",
+    )
 )
 
 # ---------------------------------------------------------------------------

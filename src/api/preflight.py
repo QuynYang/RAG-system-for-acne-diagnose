@@ -22,6 +22,12 @@ NEO4J_PASSWORD = os.getenv("NEO4J_PASSWORD", "password")
 OLLAMA_BASE_URL = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
 OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "qwen3:8b")
 PREFLIGHT_CHECK_TIMEOUT_SECONDS = float(os.getenv("PREFLIGHT_CHECK_TIMEOUT_SECONDS", "4.0"))
+PREFLIGHT_REQUIRE_OLLAMA = os.getenv("PREFLIGHT_REQUIRE_OLLAMA", "true").lower() in {
+    "1",
+    "true",
+    "yes",
+    "y",
+}
 
 
 @dataclass
@@ -199,6 +205,8 @@ async def run_phase2_preflight() -> dict[str, Any]:
         "redis": redis.to_dict(),
         "ollama": ollama.to_dict(),
     }
-    required = [postgres, qdrant, neo4j, ollama]
+    required = [postgres, qdrant, neo4j]
+    if PREFLIGHT_REQUIRE_OLLAMA:
+        required.append(ollama)
     overall = "ok" if all(check.status == "ok" for check in required) else "degraded"
     return {"status": overall, "checks": checks}

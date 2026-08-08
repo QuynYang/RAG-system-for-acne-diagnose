@@ -41,16 +41,17 @@ logging.basicConfig(
 )
 logger = logging.getLogger("init_schema")
 
-DATABASE_URL = os.getenv(
-    "DATABASE_URL",
-    "postgresql+asyncpg://user:password@localhost:5433/acne_agent_db",
+from src.database.connection import normalize_async_database_url, normalize_sync_database_url
+
+DATABASE_URL = normalize_async_database_url(
+    os.getenv(
+        "DATABASE_URL",
+        "postgresql+asyncpg://user:password@localhost:5433/acne_agent_db",
+    )
 )
 
-SYNC_DATABASE_URL = os.getenv(
-    "SYNC_DATABASE_URL",
-    DATABASE_URL.replace("+asyncpg", "+psycopg2").replace(
-        "postgresql+asyncpg", "postgresql"
-    ),
+SYNC_DATABASE_URL = normalize_sync_database_url(
+    os.getenv("SYNC_DATABASE_URL", DATABASE_URL)
 )
 
 VECTOR_DB_PROVIDER = os.getenv("VECTOR_DB_PROVIDER", "qdrant").lower()
