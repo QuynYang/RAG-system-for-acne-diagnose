@@ -980,6 +980,7 @@ async def skin_chat_endpoint(request: SkinChatRequest):
         request.acne_data,
         request.user_profile,
         request.message,
+        request.store_catalog,
     )
 
     inner_request = ChatRequest(

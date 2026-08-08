@@ -29,6 +29,7 @@ def build_context_message(
     acne_data: SkinChatAcneData,
     user_profile: Optional[SkinChatUserProfile],
     user_message: Optional[str] = None,
+    store_catalog: Optional[list[str]] = None,
 ) -> str:
     """Fold structured acne-detection + profile data into one free-text
     Vietnamese message, because the underlying /chat pipeline only accepts
@@ -59,6 +60,17 @@ def build_context_message(
             parts.append(f"- Dị ứng đã biết: {', '.join(user_profile.allergies)}")
         if user_profile.current_products:
             parts.append(f"- Sản phẩm đang dùng: {', '.join(user_profile.current_products)}")
+
+    if store_catalog:
+        parts.append("")
+        parts.append(
+            "Danh mục sản phẩm OTC có bán tại cửa hàng Glow Aura "
+            "(ưu tiên gợi ý trong phạm vi này khi phù hợp, không bắt buộc kê thuốc kê đơn):"
+        )
+        for line in store_catalog[:15]:
+            cleaned = line.strip()
+            if cleaned:
+                parts.append(f"  • {cleaned}")
 
     if user_message and user_message.strip():
         # Ignore the hardcoded default message the C# client currently sends

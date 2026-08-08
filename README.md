@@ -461,6 +461,7 @@ Các endpoint chính:
 | `GET` | `/retrieve?q=...&top_k=5` | Debug retrieval | Có thể gọi embedding provider |
 | `GET` | `/models` | Liệt kê Gemini/Ollama model options | Query Ollama tags |
 | `POST` | `/chat` | Chat RAG chính | Có thể gọi LLM provider |
+| `POST` | `/v1/skin-chat` | **Adapter cho glow_aura** — nhận `acne_data`, `user_profile`, `store_catalog`; gọi lại pipeline `/chat` | Dùng bởi `RagChatClient.cs` |
 | `GET` | `/chat/sessions` | Liệt kê chat sessions | Dùng PostgreSQL |
 | `DELETE` | `/chat/sessions` | Xóa chat history và app-owned Redis answer-cache keys | Destructive với chat history/cache app |
 | `GET` | `/chat/sessions/{session_id}/messages` | Lấy messages của session | Không gọi LLM |
@@ -506,7 +507,48 @@ Invoke-RestMethod `
 
 `/chat` hiện được thiết kế chủ yếu cho frontend nội bộ và local development.
 Không nên expose public trực tiếp endpoint này trước khi bổ sung API key auth,
-rate limit, strict CORS, HTTPS và response schema ổn định. Nếu muốn cho bên thứ
+rate limit, strict CORS, HTTPS và response schema ổn định.
+
+### Tích hợp glow_aura (`POST /v1/skin-chat`)
+
+Backend ASP.NET (`glow_aura`) gọi endpoint adapter này sau bước YOLO phát hiện mụn.
+Contract JSON khớp `RagChatClient.cs`:
+
+**Request (ví dụ):**
+
+```json
+{
+  "session_id": "uuid",
+  "message": "Phân tích tình trạng da...",
+  "acne_data": {
+    "total_acne": 5,
+    "blackheads": 2,
+    "whiteheads": 1,
+    "pimples": 2,
+    "severity": "mild"
+  },
+  "user_profile": {
+    "age": 22,
+    "skin_type": "oily",
+    "is_pregnant": false,
+    "allergies": [],
+    "current_products": []
+  },
+  "store_catalog": [
+    "SRM BHA (Brand X) — Cleanser — phù hợp da dầu/mụn — thành phần: salicylic acid 2%"
+  ]
+}
+```
+
+**Response:** `session_id`, `answer`, `recommendations[]`, `red_flags[]`, `confidence`, `disclaimer`.
+
+`store_catalog` (M — catalog alignment): snapshot SKU OTC từ MongoDB Glow Aura. Adapter gộp vào
+`build_context_message()` để RAG ưu tiên gợi ý trong phạm vi sản phẩm có bán, thay vì chỉ
+knowledge thuốc kê đơn (Differin, Epiduo…).
+
+Cấu hình phía glow_aura: `AiServices:GroupB:ChatEndpoint = /v1/skin-chat`.
+
+Nếu muốn cho bên thứ
 ba tích hợp, nên tạo endpoint public riêng như `/v1/chat`.
 
 ## Ingestion Và Knowledge Base
