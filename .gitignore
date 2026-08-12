@@ -1,31 +1,65 @@
 # =============================================================================
-# .gitignore  –  12-Factor App / Python / Node.js / Docker
+# .gitignore – 12-Factor App / Python / Node.js / Docker
 # =============================================================================
 
-# ---------------------------------------------------------------------------
-# Environment & Secrets  (12-Factor: config in environment)
-# ---------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
+# Environment & Secrets
+# -----------------------------------------------------------------------------
+
+# All environment files
 .env
+.env.*
+!.env.example
+!.env.sample
+!.env.template
+
+# Explicitly ignore production environment files
+.env.production
+.env.production.*
+**/.env.production
+**/.env.production.*
+
+# Local / development environment files
+.env.local
+.env.*.local
+.env.development
+.env.development.*
+.env.test
+.env.test.*
+
+# Backup / audit environment files
 .env.hardening02_backup
 .env.phase2_audit_backup
 .env.pre_ui_audit_backup
-.env.local
-.env.*.local
+
+# Environment tools
 .envrc
+
+# Certificates / private keys
 *.pem
 *.key
 *.crt
-secrets/
+*.p12
+*.pfx
 
-# ---------------------------------------------------------------------------
+# Secrets
+secrets/
+**/secrets/
+
+# -----------------------------------------------------------------------------
 # Python
-# ---------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
+
 __pycache__/
+**/__pycache__/
+
 *.py[cod]
 *$py.class
+
 *.so
 *.egg
 *.egg-info/
+
 dist/
 build/
 eggs/
@@ -38,14 +72,20 @@ lib/
 lib64/
 MANIFEST
 
+# -----------------------------------------------------------------------------
 # Virtual environments
+# -----------------------------------------------------------------------------
+
 .venv/
 venv/
 ENV/
 env/
 .Python
 
+# -----------------------------------------------------------------------------
 # Testing & Coverage
+# -----------------------------------------------------------------------------
+
 .pytest_cache/
 .coverage
 .coverage.*
@@ -56,13 +96,19 @@ htmlcov/
 nosetests.xml
 *.cover
 
+# -----------------------------------------------------------------------------
 # Type checking
+# -----------------------------------------------------------------------------
+
 .mypy_cache/
 .dmypy.json
 dmypy.json
 .pytype/
 
+# -----------------------------------------------------------------------------
 # Jupyter
+# -----------------------------------------------------------------------------
+
 .ipynb_checkpoints/
 **/.ipynb_checkpoints/
 *.ipynb
@@ -70,109 +116,178 @@ dmypy.json
 # Local notebook recovery backups
 local_notebook_backups/
 
-# ---------------------------------------------------------------------------
-# Node.js / Web (src/frontend)
-# ---------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
+# Node.js / Web
+# -----------------------------------------------------------------------------
+
 node_modules/
+**/node_modules/
+
 src/frontend/node_modules/
+
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+
 .pnp
 .pnp.js
-.yarn/cache
-.yarn/unplugged
+
+.yarn/cache/
+.yarn/unplugged/
 .yarn/build-state.yml
 .yarn/install-state.gz
 
-# Build output
+# -----------------------------------------------------------------------------
+# Frontend build output
+# -----------------------------------------------------------------------------
+
 .next/
 out/
 dist/
-src/frontend/dist/
 build/
+
+src/frontend/dist/
+
 .nuxt/
 .output/
 
-# Package lock files (choose one approach – keep only what you use)
+# -----------------------------------------------------------------------------
+# Package lock files
+# -----------------------------------------------------------------------------
+
+# Keep package-lock.json / yarn.lock if your project uses them.
+# Do NOT ignore them unless you intentionally choose another package manager.
+
 # package-lock.json
 # yarn.lock
 
-# ---------------------------------------------------------------------------
-# Data & Knowledge (keep structure, exclude large/sensitive files)
-# ---------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
+# Data & Knowledge
+# -----------------------------------------------------------------------------
+
+# Ignore all data by default
 data/*
+
+# Raw / processed / generated data
 data/raw/
 data/processed/
 data/embeddings/
 data/cache/
+
+# Keep taxonomy directory
 !data/taxonomy/
+
+# Ignore taxonomy files by default
 data/taxonomy/*
+
+# Keep required taxonomy files
 !data/taxonomy/drug_aliases.yaml
 !data/taxonomy/drug_taxonomy_v2.yaml
 
-# Keep sample_data structure but ignore large files
+# -----------------------------------------------------------------------------
+# Sample data
+# -----------------------------------------------------------------------------
+
 sample_data/
 sample_data_*/
+
+# PDF files
 *.pdf
-sample_data/**/*.pdf
-sample_data/**/*.parquet
-sample_data/**/*.arrow
+**/*.pdf
+
+# Parquet / Arrow files
+*.parquet
+*.arrow
+
+# Keep directory placeholder if present
 !sample_data/.gitkeep
 
-# ---------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 # Docker
-# ---------------------------------------------------------------------------
-.docker/
+# -----------------------------------------------------------------------------
 
-# ---------------------------------------------------------------------------
+.docker/
+docker-data/
+docker-volumes/
+
+# -----------------------------------------------------------------------------
 # Database
-# ---------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
+
 *.sqlite
 *.sqlite3
 *.db
+
 postgres-data/
 pgdata/
 
-# ---------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 # Logs
-# ---------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
+
 logs/
-*.log
 log/
+*.log
+
+# Evaluation reports / generated reports
 reports/
 reports/evaluation/
 
-# ---------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 # IDE / Editor
-# ---------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
+
 .vscode/
+
+# Keep shared VS Code configuration examples
 !.vscode/extensions.json
 !.vscode/settings.json.example
+
 .idea/
+
 *.swp
 *.swo
 *~
-.DS_Store
-Thumbs.db
-desktop.ini
 
-# ---------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 # OS
-# ---------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
+
 .DS_Store
 .DS_Store?
 ._*
 .Spotlight-V100
 .Trashes
-ehthumbs.db
 
-# ---------------------------------------------------------------------------
+ehthumbs.db
+Thumbs.db
+desktop.ini
+
+# -----------------------------------------------------------------------------
 # Misc
-# ---------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
+
 *.bak
 *.tmp
 *.temp
+
 .cache/
 tmp/
 temp/
+
+# -----------------------------------------------------------------------------
+# Project-specific generated files
+# -----------------------------------------------------------------------------
+
+*.pid
+*.pid.lock
+
+.pyre/
+.ruff_cache/
+
+# -----------------------------------------------------------------------------
+# Local configuration
+# -----------------------------------------------------------------------------
+
+config.local.*
+settings.local.*

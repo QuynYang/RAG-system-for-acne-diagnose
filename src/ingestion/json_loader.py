@@ -29,7 +29,8 @@ def load_web_json_documents_with_stats(
 
     json_path = Path(path)
     try:
-        data = json.loads(json_path.read_text(encoding="utf-8"))
+        # utf-8-sig accepts files saved with or without a UTF-8 BOM (common on Windows).
+        data = json.loads(json_path.read_text(encoding="utf-8-sig"))
     except json.JSONDecodeError as exc:
         raise ValueError(f"Invalid JSON file at {json_path}: {exc}") from exc
     except OSError as exc:

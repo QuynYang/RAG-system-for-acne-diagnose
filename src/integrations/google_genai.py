@@ -150,12 +150,16 @@ def embed_texts_sync(
         return []
     try:
         active_client = client or build_google_genai_client(api_key=api_key)
-        response = active_client.models.embed_content(
-            model=model_name,
-            contents=texts,
-            config=types.EmbedContentConfig(task_type=task_type),
-        )
-        vectors = extract_embedding_vectors(response, expected_count=len(texts))
+        config = types.EmbedContentConfig(task_type=task_type)
+        # gemini-embedding-2 returns one vector per call even when contents is a list.
+        vectors: list[list[float]] = []
+        for text in texts:
+            response = active_client.models.embed_content(
+                model=model_name,
+                contents=text,
+                config=config,
+            )
+            vectors.extend(extract_embedding_vectors(response, expected_count=1))
         validate_embedding_vectors(vectors, expected_dimensions=expected_dimensions)
         return vectors
     except asyncio.CancelledError:

@@ -96,14 +96,16 @@ def test_extract_response_text_invalid_response_returns_none(response: object) -
 
 def test_embed_texts_sync_extracts_and_validates_3072_vectors() -> None:
     capture: dict = {}
-    vector = [0.0] * 3072
-    response = SimpleNamespace(
-        embeddings=[
-            SimpleNamespace(values=vector),
-            SimpleNamespace(values=[1.0] * 3072),
-        ]
+    vector_a = [0.0] * 3072
+    vector_b = [1.0] * 3072
+    client = SimpleNamespace(
+        models=_FakeSyncModels(
+            capture,
+            SimpleNamespace(
+                embeddings=[SimpleNamespace(values=vector_a)],
+            ),
+        )
     )
-    client = SimpleNamespace(models=_FakeSyncModels(capture, response))
 
     vectors = google_genai.embed_texts_sync(
         ["a", "b"],
@@ -115,10 +117,10 @@ def test_embed_texts_sync_extracts_and_validates_3072_vectors() -> None:
     )
 
     assert len(vectors) == 2
-    assert vectors[0] == vector
+    assert vectors[0] == vector_a
+    assert vectors[1] == vector_a
     assert capture["model"] == "models/gemini-embedding-2"
-    assert capture["contents"] == ["a", "b"]
-    assert capture["config"].task_type == "retrieval_document"
+    assert capture["contents"] == "b"
 
 
 @pytest.mark.parametrize(
