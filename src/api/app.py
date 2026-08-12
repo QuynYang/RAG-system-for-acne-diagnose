@@ -226,6 +226,9 @@ class ChatRequest(BaseModel):
     llm_model: Optional[str] = None
     allow_model_fallback: bool = True
     bypass_cache: bool = False
+    # Structured adapter payloads (e.g. /v1/skin-chat) embed catalog context and
+    # are not end-user chat spam — skip the short free-text input caps.
+    bypass_input_limits: bool = False
 
 class ChatCacheMetadata(BaseModel):
     enabled: bool
@@ -617,24 +620,25 @@ async def chat_endpoint(request: ChatRequest):
             status_code=400,
             detail={"code": "empty_message", "message": "Câu hỏi không được để trống."}
         )
-        
-    if len(message_trimmed) > MAX_MESSAGE_CHARS:
-        raise HTTPException(
-            status_code=400,
-            detail={"code": "message_too_long", "message": f"Câu hỏi của bạn hơi dài. Vui lòng rút gọn dưới {MAX_MESSAGE_CHARS} ký tự hoặc tách thành nhiều câu hỏi nhỏ."}
-        )
-        
-    if len(message_trimmed.split()) > MAX_MESSAGE_WORDS:
-        raise HTTPException(
-            status_code=400,
-            detail={"code": "too_many_words", "message": f"Câu hỏi của bạn chứa quá nhiều từ. Vui lòng rút gọn dưới {MAX_MESSAGE_WORDS} từ."}
-        )
-        
-    if message_trimmed.count('?') > MAX_QUESTION_MARKS:
-        raise HTTPException(
-            status_code=400,
-            detail={"code": "too_many_questions", "message": "Bạn đang hỏi quá nhiều ý cùng lúc. Vui lòng tách thành các câu hỏi riêng biệt để được tư vấn tốt nhất."}
-        )
+
+    if not request.bypass_input_limits:
+        if len(message_trimmed) > MAX_MESSAGE_CHARS:
+            raise HTTPException(
+                status_code=400,
+                detail={"code": "message_too_long", "message": f"Câu hỏi của bạn hơi dài. Vui lòng rút gọn dưới {MAX_MESSAGE_CHARS} ký tự hoặc tách thành nhiều câu hỏi nhỏ."}
+            )
+
+        if len(message_trimmed.split()) > MAX_MESSAGE_WORDS:
+            raise HTTPException(
+                status_code=400,
+                detail={"code": "too_many_words", "message": f"Câu hỏi của bạn chứa quá nhiều từ. Vui lòng rút gọn dưới {MAX_MESSAGE_WORDS} từ."}
+            )
+
+        if message_trimmed.count('?') > MAX_QUESTION_MARKS:
+            raise HTTPException(
+                status_code=400,
+                detail={"code": "too_many_questions", "message": "Bạn đang hỏi quá nhiều ý cùng lúc. Vui lòng tách thành các câu hỏi riêng biệt để được tư vấn tốt nhất."}
+            )
         
     # Determine session_id — use frontend's if provided, else generate one
     session_id = request.session_id or str(uuid.uuid4())[:12]
@@ -988,6 +992,7 @@ async def skin_chat_endpoint(request: SkinChatRequest):
         session_id=request.session_id,
         allow_model_fallback=True,
         bypass_cache=False,
+        bypass_input_limits=True,
     )
 
     chat_response = await chat_endpoint(inner_request)
